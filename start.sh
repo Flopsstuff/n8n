@@ -34,8 +34,13 @@ fi
 echo "🔧 Generating cloudflared config.yml for $N8N_HOST"
 TUNNEL_ID=$TUNNEL_ID N8N_HOST=$N8N_HOST envsubst < cloudflared/config.yml.template > cloudflared/config.yml
 
-echo "🔍 Checking for updates..."
-docker compose pull
+# CI pulls in its own step before stopping the old stack and sets SKIP_PULL.
+if [ -n "$SKIP_PULL" ]; then
+  echo "⏭  Skipping pull (SKIP_PULL is set)"
+else
+  echo "🔍 Checking for updates..."
+  docker compose pull
+fi
 
 # 4️⃣ Start Docker Compose
 echo "🐳 Starting Docker Compose..."

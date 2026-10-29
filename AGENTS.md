@@ -35,11 +35,15 @@ gh run list -R <owner>/<repo> -L 5
 There is no staging. `.github/workflows/ci.yml` triggers on push to `master`/`main`
 and runs on a **self-hosted runner that is the production host**: it writes `.env`
 and `cloudflared/credentials.json` from the `ENV_FILE` and `CREDENTIALS_JSON`
-repository secrets, dumps the database, then runs `./stop.sh` and `./start.sh`.
+repository secrets, runs `docker compose pull` (20-minute limit), dumps the
+database, then runs `./stop.sh` and `./start.sh` with `SKIP_PULL=1`. The pull
+comes first on purpose: if it hangs or fails, the old stack is still up. On
+2026-10-24 a pull hung inside `start.sh`, after `stop.sh`, and n8n stayed down
+for five days.
 
 Two consequences worth internalising before pushing anything:
 
-- **A deploy is also an upgrade.** `start.sh` runs `docker compose pull` and the
+- **A deploy is also an upgrade.** The pipeline runs `docker compose pull` and the
   n8n image is `n8nio/n8n:latest`, so any push can jump n8n several versions and
   run irreversible database migrations. That is why the pipeline dumps the
   database first (`~/backups/n8n`, 8 most recent kept).

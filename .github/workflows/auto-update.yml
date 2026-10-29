@@ -1,8 +1,8 @@
 name: Weekly n8n update
 
 # n8n is pinned to :latest, so simply redeploying pulls whatever is current.
-# This runs the normal deploy pipeline on a schedule: stop.sh, then start.sh,
-# which does `docker compose pull` before `up -d`.
+# This runs the normal deploy pipeline on a schedule: `docker compose pull`,
+# then stop.sh and start.sh.
 
 on:
   schedule:

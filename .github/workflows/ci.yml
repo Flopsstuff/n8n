@@ -10,7 +10,9 @@ on:
 jobs:
   run:
     runs-on: self-hosted
-    
+    # The default is 6 hours. A hung step should fail fast, not hold the runner.
+    timeout-minutes: 45
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -27,6 +29,14 @@ jobs:
         cat <<'EOF' > cloudflared/credentials.json
         ${{ secrets.CREDENTIALS_JSON }}
         EOF
+
+    - name: Pull images
+      # Pull while the old stack is still serving. If this hangs or fails, the
+      # job stops here and nothing has been taken down — on 2026-10-24 a pull
+      # hung on the docker credential helper after stop.sh and n8n stayed down
+      # for five days.
+      timeout-minutes: 20
+      run: docker compose pull
 
     - name: Back up the database
       run: |
@@ -61,6 +71,10 @@ jobs:
         ./stop.sh
 
     - name: Start instance
+      timeout-minutes: 10
+      env:
+        # Images were pulled above; a second pull is just another chance to hang.
+        SKIP_PULL: "1"
       run: |
         ./start.sh
 
